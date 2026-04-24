@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Vault</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #121212;
+            --surface-color: #1e1e1e;
+            --primary-accent: #bb86fc;
+            --gold-accent: #ffb74d;
+            --text-main: #e0e0e0;
+            --border-color: #333;
+        }
+
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-main);
+            min-height: 100vh;
+        }
+
+        /* Navbar Styling */
+        .navbar { 
+            background-color: var(--surface-color) !important; 
+            border-bottom: 1px solid var(--border-color); 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* Sidebar Styling */
+        .sidebar { 
+            background-color: var(--surface-color); 
+            border-right: 1px solid var(--border-color); 
+            min-height: calc(100vh - 56px); 
+            padding-top: 20px;
+        }
+
+        /* Custom Gold and Accent Colors */
+        .text-accent { color: var(--gold-accent) !important; }
+        .text-primary-custom { color: var(--primary-accent) !important; }
+
+        /* Recipe Cards */
+        .card { 
+            background-color: var(--surface-color); 
+            border: 1px solid var(--border-color); 
+            transition: all 0.2s ease-in-out; 
+            color: var(--text-main); 
+            cursor: pointer;
+        }
+        .card:hover { 
+            transform: translateY(-5px); 
+            border-color: var(--primary-accent); 
+            box-shadow: 0 5px 15px rgba(187, 134, 252, 0.2);
+        }
+        .card-title { color: var(--gold-accent); }
+
+        /* Sidebar List Items */
+        .list-group-item { 
+            background-color: transparent; 
+            color: var(--text-main); 
+            border-color: var(--border-color); 
+            transition: 0.2s;
+        }
+        .list-group-item:hover { 
+            background-color: #2a2a2a; 
+            color: var(--gold-accent); 
+        }
+        .list-group-item.active { 
+            background-color: var(--primary-accent); 
+            border-color: var(--primary-accent); 
+            color: #121212; 
+            font-weight: bold;
+        }
+
+        /* Buttons and Pagination */
+        .btn-primary { 
+            background-color: var(--primary-accent); 
+            border: none; 
+            color: #121212; 
+            font-weight: bold; 
+        }
+        .btn-primary:hover { background-color: #9965f4; }
+        
+        .page-link { 
+            background-color: var(--surface-color); 
+            color: var(--primary-accent); 
+            border-color: var(--border-color); 
+        }
+        .page-link:hover { 
+            background-color: var(--border-color); 
+            color: var(--gold-accent); 
+        }
+        .page-item.disabled .page-link { 
+            background-color: #1a1a1a; 
+            color: #555; 
+            border-color: var(--border-color); 
+        }
+
+        /* Sticky sidebar for desktop */
+        @media (min-width: 768px) {
+            .sidebar {
+                position: sticky;
+                top: 56px;
+                height: calc(100vh - 56px);
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container-fluid">
+        <a class="navbar-brand text-accent fw-bold" href="/">RecipeVault</a>
+        
+        <form class="d-flex mx-auto w-50" action="/" method="get">
+            <input class="form-control me-2 bg-dark text-white border-secondary" 
+                   type="search" name="query" 
+                   value="{{ query if query else '' }}" 
+                   placeholder="Search ingredients or names..." 
+                   aria-label="Search">
+            <button class="btn btn-primary" type="submit">Search</button>
+        </form>
+
+        <div class="ms-auto">
+            {% if query or category %}
+                <a href="/" class="btn btn-sm btn-outline-secondary">Clear Filters</a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+
+<div class="container-fluid">
+    <div class="row">
+        <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+            <div class="position-sticky">
+                <h5 class="text-accent px-3 mb-3">Categories</h5>
+                <div class="list-group list-group-flush">
+                    <a href="/" class="list-group-item list-group-item-action {{ 'active' if not category else '' }}">
+                        All Recipes
+                    </a>
+                    {% for cat in categories %}
+                    <a href="/?category={{ cat }}" class="list-group-item list-group-item-action {{ 'active' if category == cat else '' }}">
+                        {{ cat }}
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+        </nav>
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h6 class="text-accent fw-bold m-0">Page {{ page }} of {{ total_pages }}</h6>
+                <div>
+                    {% if query %}
+                        <span class="badge rounded-pill bg-dark border border-secondary text-primary-custom px-3 py-2">Searching for: {{ query }}</span>
+                    {% elif category %}
+                        <span class="badge rounded-pill bg-dark border border-secondary text-primary-custom px-3 py-2">Category: {{ category }}</span>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 row-cols-xl-4 g-4">
+                {% for r in recipes %}
+                <div class="col">
+                    <a href="/recipe/{{ r.id }}" class="text-decoration-none">
+                        <div class="card h-100 shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title mb-2">{{ r.title }}</h5>
+                                <p class="card-text small text-muted mb-0">
+                                    {{ r.categories if r.categories else 'General' }}
+                                </p>
+                            </div>
+                            <div class="card-footer bg-transparent border-0 pt-0">
+                                <small class="text-primary-custom fw-bold">{{ r.yield_info }}</small>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% else %}
+                <div class="col-12 text-center py-5">
+                    <h4 class="text-muted">No recipes found. Try a different search!</h4>
+                    <a href="/" class="text-primary-custom">View All Recipes</a>
+                </div>
+                {% endfor %}
+            </div>
+
+            {% if total_pages > 1 %}
+            <nav class="mt-5 mb-5" aria-label="Recipe navigation">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {{ 'disabled' if page <= 1 }}">
+                        <a class="page-link" href="{{ url_for('index', page=page-1, query=query, category=category) }}">Previous</a>
+                    </li>
+                    
+                    <li class="page-item disabled">
+                        <span class="page-link text-white border-secondary">{{ page }} / {{ total_pages }}</span>
+                    </li>
+                    
+                    <li class="page-item {{ 'disabled' if page >= total_pages }}">
+                        <a class="page-link" href="{{ url_for('index', page=page+1, query=query, category=category) }}">Next</a>
+                    </li>
+                </ul>
+            </nav>
+            {% endif %}
+
+        </main>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
